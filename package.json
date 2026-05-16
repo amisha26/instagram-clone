@@ -3,7 +3,7 @@
   "scripts": {
     "dev": "bun run --hot src/index.ts",
     "format": "bunx @biomejs/biome format --write ./src",
-    "check": "bunx @biomejs/biome check --apply ./src",
+    "check": "bunx @biomejs/biome check ./src",
     "prepare": "husky",
     "test": "bun test",
     "lint": "biome check ./src"
@@ -22,7 +22,7 @@
   },
   "lint-staged": {
   "*.{ts,tsx}": [
-    "biome check --apply",
+    "biome check",
     "bunx tsc --noEmit"
   ]
 }

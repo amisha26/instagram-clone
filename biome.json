@@ -13,7 +13,6 @@
 		"indentStyle": "tab"
 	},
 	"linter": {
-		"ignore": ["drizzle/*"],
 		"enabled": true,
 		"rules": {
 			"recommended": true
