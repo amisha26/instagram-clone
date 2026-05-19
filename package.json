@@ -6,14 +6,18 @@
     "check": "bunx @biomejs/biome check ./src",
     "prepare": "husky",
     "test": "bun test",
-    "lint": "biome check ./src"
+    "lint": "biome check ./src",
+    "db:studio": "drizzle-kit studio --host=0.0.0.0 --config=src/config/drizzle.config.ts",
+    "db:generate:migration": "drizzle-kit generate --config=src/config/drizzle.config.ts",
+    "db:migrate": "drizzle-kit migrate --config=src/config/drizzle.config.ts"
   },
   "dependencies": {
     "@hono/zod-openapi": "^1.4.0",
+    "drizzle-kit": "^0.31.10",
     "drizzle-orm": "^0.45.2",
     "drizzle-seed": "^0.3.1",
     "hono": "^4.12.18",
-    "pg": "^8.20.0",
+    "pg": "^8.21.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {

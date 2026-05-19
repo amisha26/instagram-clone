@@ -1,9 +1,10 @@
+// src/index.ts
 import app from "./app";
-import { PORT } from "./config/env";
+import { env } from "./config/env";
 
 Bun.serve({
-	port: PORT,
+	port: env.PORT,
 	fetch: app.fetch,
 });
 
-console.log(`Server is running on port ${PORT}`);
+console.log(`🚀 Server is running on port ${env.PORT}`);

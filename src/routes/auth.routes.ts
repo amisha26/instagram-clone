@@ -1,6 +1,8 @@
 import { OpenAPIHono } from "@hono/zod-openapi";
 import { register } from "../controller/auth.controller";
 
-const app = new OpenAPIHono();
+const authRoutes = new OpenAPIHono();
 
-app.post("/register", register);
+authRoutes.post("/register", register);
+
+export default authRoutes;
