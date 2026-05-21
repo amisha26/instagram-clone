@@ -25,3 +25,10 @@ export const registerUserSchema = z
 		bio: z.string().max(500).optional(),
 	})
 	.openapi("RegisterUser");
+
+export const loginUserSchema = z
+	.object({
+		username: z.string().min(3).max(30),
+		password: z.string().min(6),
+	})
+	.openapi("LoginUser");
