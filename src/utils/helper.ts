@@ -1,5 +1,6 @@
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
+import { logger } from "./logger";
 
 type ErrorResponse = {
 	success: false;
@@ -21,4 +22,23 @@ export const sendError = (
 		},
 		status,
 	);
+};
+
+export const sendErrorWithLog = (
+	c: Context,
+	status: ContentfulStatusCode,
+	message: string,
+	technicalMessage: string,
+	errors?: unknown,
+	meta?: unknown,
+) => {
+	const payload = {
+		technicalMessage,
+		errors,
+		...(meta && typeof meta === "object" && !Array.isArray(meta) ? meta : {}),
+	};
+
+	logger.error(payload, "Technical Error");
+
+	return sendError(c, status, message, errors);
 };

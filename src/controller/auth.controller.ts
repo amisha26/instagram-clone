@@ -3,34 +3,18 @@ import type { Context } from "hono";
 import { db } from "../database/db";
 import { usersTable } from "../database/models/auth.models";
 import { AppHttpError, Errors } from "../utils/error";
-import { sendError } from "../utils/helper";
+import { sendErrorWithLog } from "../utils/helper";
 import { sendSuccessResponse } from "../utils/validations";
-import { registerUserSchema } from "../validation/auth.validation";
 
 /** Register a new user */
 export const register = async (c: Context) => {
 	try {
-		const body = await c.req.json();
-		const result = registerUserSchema.safeParse(body);
-
-		if (!result.success) {
-			return sendError(
-				c,
-				Errors.VALIDATION_FAILED.status,
-				Errors.VALIDATION_FAILED.message,
-				result.error.flatten(),
-			);
-		}
-
-		const validatedUserData = result.data;
+		const { username, email, password, dob, bio } = c.get("validatedData");
 		const existingUser = await db
 			.select()
 			.from(usersTable)
 			.where(
-				or(
-					eq(usersTable.username, validatedUserData.username),
-					eq(usersTable.email, validatedUserData.email),
-				),
+				or(eq(usersTable.username, username), eq(usersTable.email, email)),
 			);
 		if (existingUser.length !== 0) {
 			throw new AppHttpError(
@@ -39,17 +23,17 @@ export const register = async (c: Context) => {
 			);
 		}
 
-		const passwordHash = await Bun.password.hash(validatedUserData.password);
+		const passwordHash = await Bun.password.hash(password);
 
 		const createdUser = await db.transaction(async (tx) => {
 			const [user] = await tx
 				.insert(usersTable)
 				.values({
-					username: validatedUserData.username,
-					email: validatedUserData.email,
+					username: username,
+					email: email,
 					passwordHash,
-					dob: validatedUserData.dob,
-					bio: validatedUserData.bio,
+					dob: dob,
+					bio: bio,
 				})
 				.returning();
 
@@ -67,9 +51,15 @@ export const register = async (c: Context) => {
 			throw error;
 		}
 
-		throw new AppHttpError(
-			Errors.USER_CREATION_FAILED.message,
+		return sendErrorWithLog(
+			c,
 			Errors.USER_CREATION_FAILED.status,
+			Errors.USER_CREATION_FAILED.message,
+			error instanceof Error
+				? error.message
+				: "Registration failed due to an unexpected error.",
+			undefined,
+			{ path: c.req.path },
 		);
 	}
 };

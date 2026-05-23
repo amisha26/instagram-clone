@@ -4,8 +4,6 @@ import routes from "./routes/index";
 
 const app = new Hono();
 
-app.onError(errorHandler);
-
 app.get("/", (c) => {
 	return c.text("Hello amisha!");
 });
@@ -21,5 +19,7 @@ app.notFound((c) =>
 		404,
 	),
 );
+
+app.onError(errorHandler);
 
 export default app;
