@@ -2,14 +2,20 @@ import { eq, or } from "drizzle-orm";
 import type { Context } from "hono";
 import { db } from "../database/db";
 import { usersTable } from "../database/models/auth.models";
+import {
+	getValidatedData,
+	type ValidatedData,
+} from "../middleware/validate.middleware";
 import { AppHttpError, Errors } from "../utils/error";
 import { sendErrorWithLog } from "../utils/helper";
 import { sendSuccessResponse } from "../utils/validations";
+import type { registerUserSchema } from "../validation/auth.validation";
 
 /** Register a new user */
 export const register = async (c: Context) => {
 	try {
-		const { username, email, password, dob, bio } = c.get("validatedData");
+		const { username, email, password, dob, bio } =
+			getValidatedData<ValidatedData<typeof registerUserSchema>>(c);
 		const existingUser = await db
 			.select()
 			.from(usersTable)
@@ -18,8 +24,8 @@ export const register = async (c: Context) => {
 			);
 		if (existingUser.length !== 0) {
 			throw new AppHttpError(
-				Errors.DUPLICATE_RECORD.message,
-				Errors.DUPLICATE_RECORD.status,
+				Errors.DUPLICATE_USER.message,
+				Errors.DUPLICATE_USER.status,
 			);
 		}
 
@@ -43,7 +49,7 @@ export const register = async (c: Context) => {
 		return sendSuccessResponse(
 			c,
 			"User registered successfully",
-			{ id: createdUser },
+			createdUser,
 			201,
 		);
 	} catch (error) {
