@@ -1,2 +1,4 @@
 bunx lint-staged
+bun run format
+bun run check
 bun run lint
