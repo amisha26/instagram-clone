@@ -42,6 +42,15 @@ export const registerUserSchema = z
 	})
 	.openapi("RegisterUser");
 
+export const verifyOTP = z
+	.object({
+		otp: z
+			.string()
+			.length(5, "OTP must be exactly 5 characters long")
+			.regex(/^\d+$/, "OTP must contain only digits"),
+	})
+	.openapi("VerifyOTP");
+
 export const loginUserSchema = z
 	.object({
 		username: z.string(),
