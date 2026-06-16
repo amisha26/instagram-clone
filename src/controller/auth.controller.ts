@@ -1,4 +1,4 @@
-import { eq, or } from "drizzle-orm";
+import { desc, eq, or } from "drizzle-orm";
 import type { Context } from "hono";
 import { db } from "../database/db";
 import {
@@ -12,6 +12,11 @@ import {
 import { sendEmail } from "../services/email/email.services";
 import { getOtpTemplate } from "../services/email/template/otp.template";
 import OTPService from "../services/otp/2fa.otp.services";
+import {
+	generateAccessToken,
+	getUserIdFromCookie,
+	setAccessTokenCookie,
+} from "../utils/auth";
 import { AppHttpError, Errors } from "../utils/error";
 import { sendErrorWithLog } from "../utils/helper";
 import { sendSuccessResponse } from "../utils/validations";
@@ -32,6 +37,13 @@ export const register = async (c: Context) => {
 				or(eq(usersTable.username, username), eq(usersTable.email, email)),
 			);
 		if (existingUser.length !== 0) {
+			if (existingUser.some((user) => user.isVerified === false)) {
+				// if there is an existing user with pending verification, then ask user to verify email
+				throw new AppHttpError(
+					Errors.UNVERIFIED_USER.message,
+					Errors.UNVERIFIED_USER.status,
+				);
+			}
 			throw new AppHttpError(
 				Errors.DUPLICATE_USER.message,
 				Errors.DUPLICATE_USER.status,
@@ -47,29 +59,29 @@ export const register = async (c: Context) => {
 			const [user] = await tx
 				.insert(usersTable)
 				.values({
-					username: username,
-					email: email,
+					username,
+					email,
 					passwordHash,
-					dob: dob,
+					dob,
 					isVerified: false,
-					bio: bio,
+					bio,
 				})
 				.returning();
+
+			await tx.insert(otpVerificationTable).values({
+				userId: user.id,
+				otp: hashedOTP,
+				expiresAt,
+			});
 
 			return user;
 		});
 
-		// Create otp verification table record
-		await db.transaction(async (tx) => {
-			await tx
-				.insert(otpVerificationTable)
-				.values({
-					userId: createdUser.id,
-					otp: hashedOTP,
-					expiresAt: expiresAt,
-				})
-				.returning();
-		});
+		// Create access token
+		const accessToken = await generateAccessToken(createdUser.id);
+
+		// Set token in cookie
+		setAccessTokenCookie(c, accessToken);
 
 		// Send OTP to user's email
 		await sendEmail({
@@ -83,7 +95,11 @@ export const register = async (c: Context) => {
 		return sendSuccessResponse(
 			c,
 			"Verify otp sent on email to complete registration.",
-			createdUser,
+			{
+				userId: createdUser.id,
+				email: createdUser.email,
+				username: createdUser.username,
+			},
 			201,
 		);
 	} catch (error) {
@@ -107,8 +123,7 @@ export const register = async (c: Context) => {
 export const verifyUser = async (c: Context) => {
 	try {
 		const { otp } = getValidatedData<ValidatedData<typeof verifyOTP>>(c);
-		const userId = c.req.param("userId");
-
+		const userId = await getUserIdFromCookie(c);
 		if (!userId) {
 			throw new AppHttpError(
 				Errors.UNAUTHORIZED.message,
@@ -120,7 +135,9 @@ export const verifyUser = async (c: Context) => {
 		const otpRecords = await db
 			.select()
 			.from(otpVerificationTable)
-			.where(eq(otpVerificationTable.userId, userId));
+			.where(eq(otpVerificationTable.userId, userId))
+			.orderBy(desc(otpVerificationTable.expiresAt))
+			.limit(1);
 
 		if (otpRecords.length === 0) {
 			throw new AppHttpError("Invalid OTP or user not found", 400);
@@ -169,6 +186,58 @@ export const verifyUser = async (c: Context) => {
 			error instanceof Error
 				? error.message
 				: "OTP verification failed due to an unexpected error.",
+			undefined,
+			{ path: c.req.path },
+		);
+	}
+};
+
+export const resendOTP = async (c: Context) => {
+	try {
+		const userId = await getUserIdFromCookie(c);
+		const user = await db
+			.select()
+			.from(usersTable)
+			.where(eq(usersTable.id, userId));
+
+		const { otp, hashedOTP, expiresAt } = await OTPService.generateOTP();
+
+		await db
+			.update(otpVerificationTable)
+			.set({ otp: hashedOTP, expiresAt: expiresAt })
+			.where(eq(otpVerificationTable.userId, userId));
+
+		// Send OTP to user's email
+		await sendEmail({
+			c,
+			toEmail: user[0].email,
+			toName: user[0].username,
+			subject: "Verify Your Email Address",
+			html: getOtpTemplate(otp, user[0].username),
+		});
+
+		return sendSuccessResponse(
+			c,
+			"Verify otp sent on email to complete registration.",
+			{
+				userId: user[0].id,
+				email: user[0].email,
+				username: user[0].username,
+			},
+			201,
+		);
+	} catch (error) {
+		if (error instanceof AppHttpError) {
+			throw error;
+		}
+
+		return sendErrorWithLog(
+			c,
+			500,
+			"Failed to resend OTP",
+			error instanceof Error
+				? error.message
+				: "Failed to resend OTP due to an unexpected error",
 			undefined,
 			{ path: c.req.path },
 		);

@@ -5,7 +5,7 @@
     "format": "bunx @biomejs/biome format --write ./src",
     "check": "bunx @biomejs/biome check ./src",
     "prepare": "husky",
-    "test": "bun test",
+    "test": "bun test --env-file=.env.test",
     "lint": "biome check ./src",
     "db:studio": "drizzle-kit studio --host=0.0.0.0 --config=src/config/drizzle.config.ts",
     "db:generate:migration": "drizzle-kit generate --config=src/config/drizzle.config.ts",
@@ -18,6 +18,7 @@
     "drizzle-orm": "^0.45.2",
     "drizzle-seed": "^0.3.1",
     "hono": "^4.12.18",
+    "jsonwebtoken": "^9.0.3",
     "pg": "^8.21.0",
     "zeptomail": "^7.0.2",
     "zod": "^4.4.3"

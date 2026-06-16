@@ -29,6 +29,10 @@ export const Errors = {
 	INVALID_CREDENTIALS: { status: 401, message: "Invalid credentials" },
 	USER_CREATION_FAILED: { status: 500, message: "Failed to create user" },
 	DUPLICATE_USER: { status: 409, message: "Username or email already exists" },
+	UNVERIFIED_USER: {
+		status: 403,
+		message: "Email not verified. Please verify your email.",
+	},
 
 	VALIDATION_FAILED: { status: 400, message: "Validation failed" },
 	INVALID_ID: { status: 400, message: "Invalid ID format" },

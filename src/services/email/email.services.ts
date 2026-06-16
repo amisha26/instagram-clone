@@ -59,10 +59,12 @@ export const sendEmail = async ({
 			htmlbody: html,
 		});
 
-		logger.info(
-			{ toEmail, subject, messageId: (response as any).message_id },
-			"Email sent successfully",
-		);
+		const messageId =
+			response && typeof response === "object" && "message_id" in response
+				? (response as { message_id?: string }).message_id
+				: undefined;
+
+		logger.info({ toEmail, subject, messageId }, "Email sent successfully");
 		return sendSuccessResponse(c, "Email Sent Successfully", response, 201);
 	} catch (error) {
 		const errorMessage =
