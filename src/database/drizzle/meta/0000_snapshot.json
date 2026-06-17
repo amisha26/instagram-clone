@@ -1,9 +1,64 @@
 {
-	"id": "16686a6b-20df-46b7-9445-d0974bf9d9f1",
+	"id": "55e57a8c-74b1-4177-b043-f051d9efd813",
 	"prevId": "00000000-0000-0000-0000-000000000000",
 	"version": "7",
 	"dialect": "postgresql",
 	"tables": {
+		"public.otp_verification_table": {
+			"name": "otp_verification_table",
+			"schema": "",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "uuid",
+					"primaryKey": true,
+					"notNull": true,
+					"default": "gen_random_uuid()"
+				},
+				"user_id": {
+					"name": "user_id",
+					"type": "uuid",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"otp": {
+					"name": "otp",
+					"type": "varchar",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"expires_at": {
+					"name": "expires_at",
+					"type": "timestamp with time zone",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"created_at": {
+					"name": "created_at",
+					"type": "timestamp with time zone",
+					"primaryKey": false,
+					"notNull": false,
+					"default": "now()"
+				}
+			},
+			"indexes": {},
+			"foreignKeys": {
+				"otp_verification_table_user_id_users_id_fk": {
+					"name": "otp_verification_table_user_id_users_id_fk",
+					"tableFrom": "otp_verification_table",
+					"tableTo": "users",
+					"columnsFrom": ["user_id"],
+					"columnsTo": ["id"],
+					"onDelete": "cascade",
+					"onUpdate": "no action"
+				}
+			},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {},
+			"policies": {},
+			"checkConstraints": {},
+			"isRLSEnabled": false
+		},
 		"public.users": {
 			"name": "users",
 			"schema": "",
@@ -44,6 +99,13 @@
 					"type": "varchar(500)",
 					"primaryKey": false,
 					"notNull": true
+				},
+				"is_verified": {
+					"name": "is_verified",
+					"type": "boolean",
+					"primaryKey": false,
+					"notNull": true,
+					"default": false
 				},
 				"created_at": {
 					"name": "created_at",

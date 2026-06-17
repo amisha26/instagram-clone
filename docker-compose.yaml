@@ -15,6 +15,7 @@ services:
       PORT: 3000
 
       DATABASE_URL: postgresql://amisha26:amisha2602@postgres:5432/instagram_clone
+      ADMIN_DB_URL: postgresql://amisha26:amisha2602@postgres:5432/postgres
 
       POSTGRES_PASSWORD: amisha2602
       POSTGRES_USER: amisha26
